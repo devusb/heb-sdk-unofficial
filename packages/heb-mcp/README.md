@@ -18,6 +18,8 @@ Set the following on your server:
 - `MCP_SERVER_URL` (public base URL for OAuth + metadata, e.g. `https://mcp.example.com`)
 - `MCP_OAUTH_ISSUER_URL` (optional; defaults to `MCP_SERVER_URL`)
 - `MCP_OAUTH_SCOPES` (optional; default `mcp:tools`)
+- `MCP_AUTH_PROXY_HEADER` (optional; header carrying the user id, e.g. `X-authentik-uid`)
+- `MCP_LISTEN` (optional; bind address such as `127.0.0.1`, or a unix socket path)
 - `MCP_OAUTH_CLIENTS_FILE` (optional; defaults to `./data/oauth/clients.json`)
 - `CLERK_JWKS_URL`
 - `CLERK_FRONTEND_URL` (required)

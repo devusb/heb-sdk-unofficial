@@ -447,10 +447,21 @@ async function startRemoteServer(sessionManagerRemote: MultiTenantSessionManager
     }
   });
 
-  app.listen(port, () => {
-    console.error(`[heb-mcp-unofficial] Streamable HTTP server listening on http://localhost:${port}`);
-    console.error(`[heb-mcp-unofficial] MCP endpoint: http://localhost:${port}/mcp`);
-  });
+  const listen = process.env.MCP_LISTEN;
+  const address = listen && listen.startsWith('/') ? listen : port;
+  const host = listen && !listen.startsWith('/') ? listen : undefined;
+  const describe = typeof address === 'string' ? address : `http://${host ?? 'localhost'}:${port}`;
+
+  const ready = () => {
+    console.error(`[heb-mcp-unofficial] Streamable HTTP server listening on ${describe}`);
+    console.error(`[heb-mcp-unofficial] MCP endpoint: ${publicUrl.origin}/mcp`);
+  };
+
+  if (host) {
+    app.listen(port, host, ready);
+  } else {
+    app.listen(address, ready);
+  }
 }
 
 main().catch((error) => {

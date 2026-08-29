@@ -15,7 +15,7 @@ import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 
-import { resolveClerkToken, verifyClerkToken, type AuthContext } from './auth.js';
+import { resolveClerkToken, resolveProxyIdentity, verifyClerkToken, type AuthContext } from './auth.js';
 import { renderPage } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -172,6 +172,12 @@ export function createAuthorizeContextMiddleware(options: {
 }): (req: Request, res: Response, next: NextFunction) => Promise<void> {
   return async (req, res, next) => {
     try {
+      const proxyAuth = resolveProxyIdentity(req);
+      if (proxyAuth) {
+        res.locals.clerkAuth = proxyAuth;
+        return next();
+      }
+
       const token = resolveClerkToken(req);
       if (token) {
         const auth = await verifyClerkToken(token);

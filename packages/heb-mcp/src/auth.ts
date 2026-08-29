@@ -6,9 +6,25 @@ export type AuthContext = {
   sessionId?: string;
 };
 
+const AUTH_PROXY_HEADER = process.env.MCP_AUTH_PROXY_HEADER;
+
 const CLERK_FRONTEND_URL = process.env.CLERK_FRONTEND_URL;
 const CLERK_JWT_TEMPLATE_NAME = process.env.CLERK_JWT_TEMPLATE_NAME;
 const CLERK_JWKS_URL = process.env.CLERK_JWKS_URL;
+
+/**
+ * Resolve the caller from a header set by a trusted reverse proxy.
+ */
+export function resolveProxyIdentity(req: Request): AuthContext | null {
+  if (!AUTH_PROXY_HEADER) return null;
+
+  const raw = req.headers[AUTH_PROXY_HEADER.toLowerCase()];
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (typeof value !== 'string') return null;
+
+  const userId = value.trim();
+  return userId ? { userId } : null;
+}
 
 let cachedJwks: ReturnType<typeof createRemoteJWKSet> | null = null;
 
@@ -102,6 +118,9 @@ export async function verifyClerkToken(token: string): Promise<AuthContext | nul
 }
 
 export async function requireAuth(req: Request, res: Response): Promise<AuthContext | null> {
+  const proxyAuth = resolveProxyIdentity(req);
+  if (proxyAuth) return proxyAuth;
+
   const token = extractBearerToken(req);
   if (!token) {
     res.status(401).json({ error: 'Missing Authorization token' });
@@ -118,6 +137,9 @@ export async function requireAuth(req: Request, res: Response): Promise<AuthCont
 }
 
 export async function requireClerkAuth(req: Request, res: Response): Promise<AuthContext | null> {
+  const proxyAuth = resolveProxyIdentity(req);
+  if (proxyAuth) return proxyAuth;
+
   const token = resolveClerkToken(req);
   if (!token) {
     res.status(401).json({ error: 'Missing Clerk session token' });
