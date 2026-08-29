@@ -1,4 +1,4 @@
-import { useAuth, useClerk, useUser } from '@clerk/clerk-react';
+import { useIdentity } from './identity';
 import { clsx, type ClassValue } from 'clsx';
 import { AlertCircle, CheckCircle2, Clipboard, ExternalLink, Loader2, LogIn, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -45,9 +45,7 @@ function extractCode(raw: string) {
 }
 
 export default function Connect() {
-  const { getToken, isLoaded: authLoaded } = useAuth();
-  const { openSignIn, signOut } = useClerk();
-  const { user } = useUser();
+  const { getToken, isLoaded: authLoaded, signedIn, label, openSignIn, signOut } = useIdentity();
   
   const [status, setStatus] = useState<'Linked' | 'Not linked' | 'Checking status…' | 'Unknown' | 'Sign in required'>('Checking status…');
   const [statusText, setStatusText] = useState('Checking…');
@@ -142,7 +140,7 @@ export default function Connect() {
 
   const handleOpenAuth = async () => {
     setExchangeStatus({ text: '', type: '' });
-    if (!user && connectConfig.clerkPublishableKey) {
+    if (!signedIn) {
       setExchangeStatus({ text: 'Please sign in to HEB MCP first.', type: 'error' });
       return;
     }
@@ -156,7 +154,7 @@ export default function Connect() {
   };
 
   const handleCopyAuth = async () => {
-    if (!user && connectConfig.clerkPublishableKey) {
+    if (!signedIn) {
       setExchangeStatus({ text: 'Please sign in to HEB MCP first.', type: 'error' });
       return;
     }
@@ -173,7 +171,7 @@ export default function Connect() {
 
   const handleExchange = async () => {
     setExchangeStatus({ text: '', type: '' });
-    if (!user && connectConfig.clerkPublishableKey) {
+    if (!signedIn) {
       setExchangeStatus({ text: 'Please sign in to HEB MCP first.', type: 'error' });
       return;
     }
@@ -255,9 +253,9 @@ export default function Connect() {
         <p className="text-ink-light text-sm mb-4">Authenticate with this MCP server securely.</p>
         
         <div className="flex flex-wrap items-center gap-4">
-          {!user ? (
+          {!signedIn ? (
             <button 
-              onClick={() => openSignIn({ forceRedirectUrl: window.location.href })}
+              onClick={openSignIn}
               className="btn-primary"
             >
               <LogIn className="w-4 h-4" /> Sign In
@@ -267,11 +265,11 @@ export default function Connect() {
                <div className="flex flex-col">
                   <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Signed in as</span>
                   <span className="font-semibold text-heb-gray">
-                    {user.primaryEmailAddress?.emailAddress || user.username}
+                    {label}
                   </span>
                </div>
                <button 
-                  onClick={() => signOut()}
+                  onClick={signOut}
                   className="text-xs text-heb-red hover:underline font-medium"
                 >
                   Sign Out
@@ -282,20 +280,20 @@ export default function Connect() {
       </section>
 
       {/* Step 2: HEB Login */}
-      <section className={cn("card transition-opacity duration-300", !user && "opacity-60 pointer-events-none")}>
+      <section className={cn("card transition-opacity duration-300", !signedIn && "opacity-60 pointer-events-none")}>
         <h2 className="text-lg font-bold text-heb-red mb-1">Step 2: Authenticate with H‑E‑B</h2>
         <p className="text-ink-light text-sm mb-4">Open the login page, sign in, and copy the code.</p>
         
         <div className="flex flex-wrap gap-3">
           <button 
-            disabled={!user}
+            disabled={!signedIn}
             onClick={handleOpenAuth} 
             className="btn-primary"
           >
             <ExternalLink className="w-4 h-4" /> Open H‑E‑B Login
           </button>
           <button 
-            disabled={!user}
+            disabled={!signedIn}
             onClick={handleCopyAuth}
             className="btn-secondary"
           >
@@ -305,7 +303,7 @@ export default function Connect() {
       </section>
 
       {/* Step 3: Exchange Code */}
-      <section className={cn("card transition-opacity duration-300", !user && "opacity-60 pointer-events-none")}>
+      <section className={cn("card transition-opacity duration-300", !signedIn && "opacity-60 pointer-events-none")}>
         <h2 className="text-lg font-bold text-heb-red mb-1">Step 3: Complete Connection</h2>
         <p className="text-ink-light text-sm mb-4">Paste the redirect URL or authorization code below.</p>
         
@@ -328,7 +326,7 @@ export default function Connect() {
           <div className="flex flex-wrap items-center gap-3 justify-between">
             <div className="flex gap-3">
                 <button 
-                disabled={!user || loading || !codeInput}
+                disabled={!signedIn || loading || !codeInput}
                 onClick={handleExchange}
                 className="btn-primary"
                 >

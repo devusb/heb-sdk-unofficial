@@ -11,6 +11,7 @@ declare global {
       clerkPublishableKey: string | null;
       clerkFrontendApi: string | null;
       clerkJwtTemplate: string | null;
+      proxyAuth?: { label: string | null } | null;
     };
   }
 }

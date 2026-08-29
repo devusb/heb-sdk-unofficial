@@ -220,11 +220,14 @@ async function startRemoteServer(sessionManagerRemote: MultiTenantSessionManager
     const clerkFrontendApi = process.env.CLERK_FRONTEND_URL ?? '';
     const clerkJwtTemplate = process.env.CLERK_JWT_TEMPLATE_NAME ?? '';
 
+    const proxyAuth = res.locals.clerkAuth as { userId: string } | undefined;
+
     const connectConfig = JSON.stringify({
       signInUrl: signInUrl ?? null,
       clerkPublishableKey: clerkPublishableKey || null,
       clerkFrontendApi: clerkFrontendApi || null,
       clerkJwtTemplate: clerkJwtTemplate || null,
+      proxyAuth: !clerkPublishableKey && proxyAuth ? { label: proxyAuth.userId } : null,
     });
 
     const configScript = `<script>window.__connectConfig = ${connectConfig};</script>`;

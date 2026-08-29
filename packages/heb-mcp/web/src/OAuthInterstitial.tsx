@@ -1,29 +1,22 @@
-import { useClerk, useUser } from '@clerk/clerk-react';
 import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
+import { useIdentity } from './identity';
 
 export default function OAuthInterstitial() {
-  const { user, isLoaded } = useUser();
-  const { openSignIn } = useClerk();
+  const { signedIn, isLoaded, openSignIn } = useIdentity();
 
   useEffect(() => {
     if (!isLoaded) return;
 
-    if (user) {
+    if (signedIn) {
       // User is signed in, cookie should now be synced. Reload to let backend see it.
       const url = new URL(window.location.href);
       url.searchParams.set('_t', Date.now().toString());
       window.location.href = url.toString();
     } else {
-      // Not signed in
-      const signInUrl = (window as any).__connectConfig?.signInUrl;
-      if (signInUrl) {
-         window.location.href = signInUrl;
-      } else {
-         openSignIn({ forceRedirectUrl: window.location.href });
-      }
+      openSignIn();
     }
-  }, [user, isLoaded, openSignIn]);
+  }, [signedIn, isLoaded, openSignIn]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh]">
