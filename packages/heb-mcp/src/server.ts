@@ -411,7 +411,7 @@ async function startRemoteServer(sessionManagerRemote: MultiTenantSessionManager
     resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(resourceServerUrl),
   });
 
-  app.post('/mcp', mcpAuthMiddleware, async (req, res) => {
+  const handleMcpRequest = async (req: express.Request, res: express.Response) => {
     const userId = req.auth?.extra?.['userId'];
 
     if (typeof userId !== 'string' || !userId) {
@@ -448,7 +448,11 @@ async function startRemoteServer(sessionManagerRemote: MultiTenantSessionManager
         res.status(500).send('Error handling request');
       }
     }
-  });
+  };
+
+  app.post('/mcp', mcpAuthMiddleware, handleMcpRequest);
+  app.get('/mcp', mcpAuthMiddleware, handleMcpRequest);
+  app.delete('/mcp', mcpAuthMiddleware, handleMcpRequest);
 
   const listen = process.env.MCP_LISTEN;
   const address = listen && listen.startsWith('/') ? listen : port;
